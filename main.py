@@ -19,7 +19,7 @@ from sklearn import preprocessing, tree
 from sklearn import datasets
 from sklearn import metrics
 from sklearn.cluster import KMeans, AgglomerativeClustering
-from sklearn.metrics import classification_report, silhouette_score
+from sklearn.metrics import classification_report, mean_squared_error, r2_score, silhouette_score
 from sklearn.metrics import silhouette_samples
 from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LinearRegression
@@ -122,7 +122,25 @@ x_reg.pop('GarageYrBlt')
 random.seed(5236)
 
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
+print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
+x= x_train_reg["GarageArea"].values.reshape(-1,1)
+y= y_train_reg.values.reshape(-1,1)
+x_t = x_test_reg["GarageArea"].values.reshape(-1,1)
+y_t = y_test_reg.values.reshape(-1,1)
 
 linear_model = LinearRegression()
-linear_model.fit(x_train_reg, y_train_reg)
-y_pred = linear_model.predict(x_test_reg)
+linear_model.fit(x, y)
+y_pred = linear_model.predict(x_t)
+
+#Plot model
+fig = plt.figure()
+plt.scatter(y_t,x_t)
+plt.plot(y_pred, x_t, color="blue")
+
+plt.title("Prediccion")
+plt.show()
+
+print('Coefficients: \n', linear_model.coef_)
+print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print('R2 score: %.2f' % r2_score(y_test_reg, y_pred))
+
