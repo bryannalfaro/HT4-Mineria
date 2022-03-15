@@ -109,12 +109,6 @@ df_norm  = (houses_df-houses_df.min())/(houses_df.max()-houses_df.min())
 #print(movies_clean_norm.fillna(0))
 houses_df_final = df_norm.fillna(0)
 
-#print(houses_df_final.describe().transpose())
-
-#new_df = houses_df[(houses_df['GrLivArea']<2000) & (houses_df['SalePrice']<250000) & (houses_df['GrLivArea']>600) & (houses_df['SalePrice']>75000)]
-
-
-
 y_reg = houses_df.pop('SalePrice')
 x_reg = houses_df
 
@@ -127,13 +121,8 @@ random.seed(5236)
 
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
 print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
-'''
-x= x_train_reg["OverallQual"].values.reshape(-1,1)
-y= y_train_reg.values.reshape(-1,1)
-x_t = x_test_reg["OverallQual"].values.reshape(-1,1)
-y_t = y_test_reg.values.reshape(-1,1)
-'''
-# use OverallQual and GrLivArea as predictors
+
+# use OverallQual as predictor
 x= x_train_reg['OverallQual'].values.reshape(-1,1)
 y= y_train_reg.values.reshape(-1,1)
 x_t = x_test_reg['OverallQual'].values.reshape(-1,1)
@@ -143,12 +132,11 @@ linear_model = LinearRegression()
 linear_model.fit(x, y)
 y_pred = linear_model.predict(x_t)
 
-print('Coefficients: \n', linear_model.coef_)
-print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('R2 score: %.2f' % r2_score(y_test_reg, y_pred))
+print('OverallQual Coefficients: \n', linear_model.coef_)
+print('OverallQual Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print('OverallQual R2 score: %.2f' % r2_score(y_test_reg, y_pred))
 
-
-# use OverallQual and GrLivArea as predictors
+# use GrLivArea as predictor
 x= x_train_reg['GrLivArea'].values.reshape(-1,1)
 y= y_train_reg.values.reshape(-1,1)
 x_t = x_test_reg['GrLivArea'].values.reshape(-1,1)
@@ -158,10 +146,9 @@ linear_model = LinearRegression()
 linear_model.fit(x, y)
 y_pred = linear_model.predict(x_t)
 
-print('Coefficients: \n', linear_model.coef_)
-print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('R2 score: %.2f' % r2_score(y_test_reg, y_pred))
-
+print('GrLivArea Coefficients: \n', linear_model.coef_)
+print('GrLivArea Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print('GrLivArea R2 score: %.2f' % r2_score(y_test_reg, y_pred))
 
 # use OverallQual and GrLivArea as predictors
 x= x_train_reg[['OverallQual', 'GrLivArea']].values
@@ -173,9 +160,9 @@ linear_model = LinearRegression()
 linear_model.fit(x, y)
 y_pred = linear_model.predict(x_t)
 
-print('Coefficients: \n', linear_model.coef_)
-print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('R2 score: %.2f' % r2_score(y_test_reg, y_pred))
+print('Multicolinealidad. Coefficients: \n', linear_model.coef_)
+print('Multicolinealidad. Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print('Multicolinealidad. R2 score: %.2f' % r2_score(y_test_reg, y_pred))
 
 # 3d plot
 fig = plt.figure()
