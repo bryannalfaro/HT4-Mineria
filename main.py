@@ -111,6 +111,10 @@ houses_df_final = df_norm.fillna(0)
 
 #print(houses_df_final.describe().transpose())
 
+#new_df = houses_df[(houses_df['GrLivArea']<2000) & (houses_df['SalePrice']<250000) & (houses_df['GrLivArea']>600) & (houses_df['SalePrice']>75000)]
+
+
+
 y_reg = houses_df.pop('SalePrice')
 x_reg = houses_df
 
@@ -123,9 +127,9 @@ random.seed(5236)
 
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
 print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
-x= x_train_reg["GarageArea"].values.reshape(-1,1)
+x= x_train_reg["GrLivArea"].values.reshape(-1,1)
 y= y_train_reg.values.reshape(-1,1)
-x_t = x_test_reg["GarageArea"].values.reshape(-1,1)
+x_t = x_test_reg["GrLivArea"].values.reshape(-1,1)
 y_t = y_test_reg.values.reshape(-1,1)
 
 linear_model = LinearRegression()
