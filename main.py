@@ -109,6 +109,12 @@ df_norm  = (houses_df-houses_df.min())/(houses_df.max()-houses_df.min())
 #print(movies_clean_norm.fillna(0))
 houses_df_final = df_norm.fillna(0)
 
+#print(houses_df_final.describe().transpose())
+
+#new_df = houses_df[(houses_df['GrLivArea']<2000) & (houses_df['SalePrice']<250000) & (houses_df['GrLivArea']>600) & (houses_df['SalePrice']>75000)]
+
+
+
 y_reg = houses_df.pop('SalePrice')
 x_reg = houses_df
 
