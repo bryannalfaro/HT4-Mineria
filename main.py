@@ -34,6 +34,10 @@ import scipy.cluster.hierarchy as sch
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 import matplotlib.cm as cm
 from sklearn.model_selection import train_test_split
+from scipy.stats import normaltest
+from sklearn.linear_model import Ridge
+from yellowbrick.regressor import ResidualsPlot
+import statsmodels.api as sm
 
 houses = pd.read_csv('train.csv', encoding='latin1', engine='python')
 
@@ -189,8 +193,37 @@ ax.set_ylabel('Year Built')
 ax.set_zlabel('SalePrice')
 plt.show()
 
+#RESIDUALES
+
+residuales = y_t - y_pred
+len(residuales)
 
 
+
+plt.plot(x_t,residuales, 'o', color='darkblue')
+plt.title("Gráfico de Residuales")
+plt.xlabel("Variable independiente")
+plt.ylabel("Residuales")
+
+plt.show()
+sns.distplot(residuales);
+plt.title("Residuales")
+plt.show()
+plt.boxplot(residuales)
+plt.show()
+
+print('Normal Test ',normaltest(residuales))
+
+model = Ridge()
+visualizer = ResidualsPlot(model)
+visualizer.fit(x,y)
+visualizer.score(x_t,y_t)
+
+plt.show()
+
+est = sm.OLS(y,x)
+est2 = est.fit()
+print(est2.summary())
 
 
 
