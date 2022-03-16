@@ -38,10 +38,14 @@ from scipy.stats import normaltest
 from sklearn.linear_model import Ridge
 from yellowbrick.regressor import ResidualsPlot
 import statsmodels.api as sm
+import warnings
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
 houses = pd.read_csv('train.csv', encoding='latin1', engine='python')
 
 '''
+
 #Conocimiento de datos
 print(houses.head())
 
@@ -122,7 +126,7 @@ print(y_reg.shape, x_reg.shape)
 x_reg.pop('MasVnrArea')
 x_reg.pop('GarageYrBlt')
 x_reg.pop('YearRemodAdd')
-#x_reg.pop('YearBuilt')
+x_reg.pop('YearBuilt')
 x_reg.pop('OverallQual')
 x_reg.pop('OverallCond')
 #x_reg.pop('GrLivArea')
@@ -130,7 +134,7 @@ x_reg.pop('FullBath')
 x_reg.pop('TotalBsmtSF')
 x_reg.pop('1stFlrSF')
 x_reg.pop('GarageCars')
-x_reg.pop('GarageArea')
+#x_reg.pop('GarageArea')
 x_reg.pop('TotRmsAbvGrd')
 x_reg.pop('Fireplaces')
 random.seed(5236)
@@ -140,7 +144,7 @@ print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
 
 
 
-# use all GrLivArea and YearBuilt as predictor
+# use all GrLivArea and GarageArea as predictor
 x= x_train_reg.values
 y= y_train_reg.values
 x_t = x_test_reg.values
@@ -150,20 +154,20 @@ linear_model = LinearRegression()
 linear_model.fit(x, y)
 y_pred = linear_model.predict(x_t)
 
-
+#print(x,type(x_reg))
 vif = pd.DataFrame()
 vif["VIF"] = [variance_inflation_factor(houses_df.values, i)
                           for i in range(houses_df.shape[1])]
 vif["features"] = houses_df.columns
 print(vif.describe)
 
-corr =  houses_copy[['GrLivArea','YearBuilt','SalePrice']].corr()
+corr =  houses_copy[['GrLivArea','GarageArea','SalePrice']].corr()
 print('Pearson correlation coefficient matrix of each variables:\n', corr)
 
 mask = np.zeros_like(corr, dtype=np.bool)
 np.fill_diagonal(mask, val=True)
 
-fig, ax = plt.subplots(figsize=(4, 3))
+fig, ax = plt.subplots(figsize=(6, 6))
 
 cmap = sns.diverging_palette(220, 10, as_cmap=True, sep=100)
 cmap.set_bad('grey')
@@ -171,12 +175,59 @@ cmap.set_bad('grey')
 sns.heatmap(corr, mask=mask, cmap=cmap, vmin=-1, vmax=1, center=0, linewidths=.5)
 fig.suptitle('Pearson correlation coefficient matrix', fontsize=14)
 ax.tick_params(axis='both', which='major', labelsize=10)
+plt.show()
 
+fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
+
+for i,e in enumerate(x_train_reg.columns):
+  linear_model.fit(x_train_reg[e][:,np.newaxis], y_train_reg)
+  axes[i].set_title("Best fit line")
+  axes[i].set_xlabel(str(e))
+  axes[i].set_ylabel('SalePrice')
+  axes[i].scatter(x_train_reg[e][:,np.newaxis], y_train_reg,color='g')
+  axes[i].plot(x_test_reg[e][:,np.newaxis],
+  linear_model.predict(x_test_reg[e][:,np.newaxis]),color='k')
+
+plt.show()
 
 print('Coefficients: \n', linear_model.coef_)
 print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
 print("R squared: %.2f"%r2_score(y_test_reg, y_pred))
 
+#RESIDUALES
+
+residuales = y_t - y_pred
+len(residuales)
+
+
+
+plt.plot(x_t,residuales, 'o', color='darkblue')
+plt.title("Gráfico de Residuales")
+plt.xlabel("Variable independiente")
+plt.ylabel("Residuales")
+
+plt.show()
+sns.distplot(residuales);
+plt.title("Residuales")
+plt.show()
+plt.boxplot(residuales)
+plt.show()
+
+print('Normal Test ',normaltest(residuales))
+
+model = Ridge()
+visualizer = ResidualsPlot(model)
+visualizer.fit(x,y)
+visualizer.score(x_t,y_t)
+
+plt.show()
+
+est = sm.OLS(y,x)
+est2 = est.fit()
+print(est2.summary())
+
+
+'''
 
 # 3d plot
 fig = plt.figure()
@@ -223,7 +274,7 @@ plt.show()
 
 est = sm.OLS(y,x)
 est2 = est.fit()
-print(est2.summary())
+print(est2.summary())'''
 
 
 
