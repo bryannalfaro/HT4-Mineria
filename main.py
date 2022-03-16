@@ -23,6 +23,7 @@ from sklearn.metrics import classification_report, mean_squared_error, r2_score,
 from sklearn.metrics import silhouette_samples
 from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LinearRegression
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 import pyclustertend
@@ -108,7 +109,7 @@ houses_df.fillna(0)
 df_norm  = (houses_df-houses_df.min())/(houses_df.max()-houses_df.min())
 #print(movies_clean_norm.fillna(0))
 houses_df_final = df_norm.fillna(0)
-
+houses_copy = (houses_df.copy())
 y_reg = houses_df.pop('SalePrice')
 x_reg = houses_df
 
@@ -116,13 +117,90 @@ print(y_reg.shape, x_reg.shape)
 
 x_reg.pop('MasVnrArea')
 x_reg.pop('GarageYrBlt')
-
+x_reg.pop('YearRemodAdd')
+#x_reg.pop('YearBuilt')
+x_reg.pop('OverallQual')
+x_reg.pop('OverallCond')
+#x_reg.pop('GrLivArea')
+x_reg.pop('FullBath')
+x_reg.pop('TotalBsmtSF')
+x_reg.pop('1stFlrSF')
+x_reg.pop('GarageCars')
+x_reg.pop('GarageArea')
+x_reg.pop('TotRmsAbvGrd')
+x_reg.pop('Fireplaces')
 random.seed(5236)
 
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
 print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
 
-# use OverallQual as predictor
+
+
+# use all GrLivArea and YearBuilt as predictor
+x= x_train_reg.values
+y= y_train_reg.values
+x_t = x_test_reg.values
+y_t = y_test_reg.values
+
+linear_model = LinearRegression()
+linear_model.fit(x, y)
+y_pred = linear_model.predict(x_t)
+
+
+vif = pd.DataFrame()
+vif["VIF"] = [variance_inflation_factor(houses_df.values, i)
+                          for i in range(houses_df.shape[1])]
+vif["features"] = houses_df.columns
+print(vif.describe)
+
+corr =  houses_copy[['GrLivArea','YearBuilt','SalePrice']].corr()
+print('Pearson correlation coefficient matrix of each variables:\n', corr)
+
+mask = np.zeros_like(corr, dtype=np.bool)
+np.fill_diagonal(mask, val=True)
+
+fig, ax = plt.subplots(figsize=(4, 3))
+
+cmap = sns.diverging_palette(220, 10, as_cmap=True, sep=100)
+cmap.set_bad('grey')
+
+sns.heatmap(corr, mask=mask, cmap=cmap, vmin=-1, vmax=1, center=0, linewidths=.5)
+fig.suptitle('Pearson correlation coefficient matrix', fontsize=14)
+ax.tick_params(axis='both', which='major', labelsize=10)
+
+
+print('Coefficients: \n', linear_model.coef_)
+print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print("R squared: %.2f"%r2_score(y_test_reg, y_pred))
+
+
+# 3d plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(x_t[:,0], x_t[:,1], y_t, c='r', marker='o')
+# graph a plane using prediction
+x_surf = np.linspace(x_t[:,0].min(), x_t[:,0].max(), 100)
+y_surf = np.linspace(x_t[:,1].min(), x_t[:,1].max(), 100)
+x_surf, y_surf = np.meshgrid(x_surf, y_surf)
+z_surf = linear_model.predict(np.c_[x_surf.ravel(), y_surf.ravel()]).reshape(x_surf.shape)
+ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.2, color='b')
+ax.set_xlabel('GrLivArea')
+ax.set_ylabel('Year Built')
+ax.set_zlabel('SalePrice')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+'''# use OverallQual as predictor
 x= x_train_reg['OverallQual'].values.reshape(-1,1)
 y= y_train_reg.values.reshape(-1,1)
 x_t = x_test_reg['OverallQual'].values.reshape(-1,1)
@@ -134,23 +212,10 @@ y_pred = linear_model.predict(x_t)
 
 print('OverallQual Coefficients: \n', linear_model.coef_)
 print('OverallQual Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('OverallQual R2 score: %.2f' % r2_score(y_test_reg, y_pred))
+print('OverallQual R2 score: %.2f' % r2_score(y_test_reg, y_pred))'''
 
-# use GrLivArea as predictor
-x= x_train_reg['GrLivArea'].values.reshape(-1,1)
-y= y_train_reg.values.reshape(-1,1)
-x_t = x_test_reg['GrLivArea'].values.reshape(-1,1)
-y_t = y_test_reg.values.reshape(-1,1)
 
-linear_model = LinearRegression()
-linear_model.fit(x, y)
-y_pred = linear_model.predict(x_t)
-
-print('GrLivArea Coefficients: \n', linear_model.coef_)
-print('GrLivArea Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('GrLivArea R2 score: %.2f' % r2_score(y_test_reg, y_pred))
-
-# use OverallQual and GrLivArea as predictors
+'''# use OverallQual and GrLivArea as predictors
 x= x_train_reg[['OverallQual', 'GrLivArea']].values
 y= y_train_reg.values.reshape(-1,1)
 x_t = x_test_reg[['OverallQual', 'GrLivArea']].values
@@ -177,5 +242,5 @@ ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.2, color='b')
 ax.set_xlabel('OverallQual')
 ax.set_ylabel('GrLivArea')
 ax.set_zlabel('SalePrice')
-plt.show()
+plt.show()'''
 
