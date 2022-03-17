@@ -6,23 +6,20 @@
 #Diego de Jesus
 #Julio Herrera
 
+'''
+Referencias
+Material brindado en clase
+https://stackoverflow.com/questions/52404857/how-do-i-plot-for-multiple-linear-regression-model-using-matplotlib
+https://medium.com/swlh/multi-linear-regression-using-python-44bd0d10082d
 
-from cgi import test
-from math import ceil
+'''
+
 import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
 import seaborn as sns
-from collections import Counter
-from sklearn import preprocessing, tree
-from sklearn import datasets
-from sklearn import metrics
-from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.metrics import classification_report, mean_squared_error, r2_score, silhouette_score
-from sklearn.metrics import silhouette_samples
-from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LinearRegression
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
@@ -33,12 +30,12 @@ import graphviz
 import sklearn.mixture as mixture
 import scipy.cluster.hierarchy as sch
 from copy import copy
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 import matplotlib.cm as cm
 from sklearn.model_selection import train_test_split
 from scipy.stats import normaltest
 from sklearn.linear_model import Ridge
 from yellowbrick.regressor import ResidualsPlot
+from statsmodels.graphics.gofplots import qqplot
 import statsmodels.api as sm
 import warnings
 
@@ -119,6 +116,63 @@ houses_df.fillna(0)
 df_norm  = (houses_df-houses_df.min())/(houses_df.max()-houses_df.min())
 #print(movies_clean_norm.fillna(0))
 houses_df_final = df_norm.fillna(0)
+'''#Analisis de tendencia a agrupamiento
+
+#Metodo Hopkings
+
+random.seed(200)
+print(pyclustertend.hopkins(houses_df_final, len(houses_df_final)))
+
+#Grafico VAT e iVAT
+x = houses_df_final.sample(frac=0.1)
+pyclustertend.vat(x)
+plt.show()
+pyclustertend.ivat(x)
+plt.show()
+
+# Numero adecuado de grupos
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, max_iter=300)
+    kmeans.fit(houses_df_final)
+    wcss.append(kmeans.inertia_)
+plt.plot(range(1, 11), wcss)
+plt.title('Grafico de codo')
+plt.xlabel('No. Clusters')
+plt.ylabel('Puntaje')
+plt.show()
+
+#Kmeans
+clusters=  KMeans(n_clusters=3, max_iter=300) #Creacion del modelo
+clusters.fit(houses_df_final) #Aplicacion del modelo de cluster
+
+houses_df_final['cluster'] = clusters.labels_ #Asignacion de los clusters
+print(houses_df_final.head())
+
+pca = PCA(2)
+pca_movies = pca.fit_transform(houses_df_final)
+pca_movies_df = pd.DataFrame(data = pca_movies, columns = ['PC1', 'PC2'])
+pca_clust_movies = pd.concat([pca_movies_df, houses_df_final[['cluster']]], axis = 1)
+
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(1,1,1)
+ax.set_xlabel('PC1', fontsize = 15)
+ax.set_ylabel('PC2', fontsize = 15)
+ax.set_title('Clusters de casas', fontsize = 20)
+
+color_theme = np.array(['red', 'green', 'blue', 'yellow','black'])
+ax.scatter(x = pca_clust_movies.PC1, y = pca_clust_movies.PC2, s = 50, c = color_theme[pca_clust_movies.cluster])
+
+plt.show()
+print(pca_clust_movies)
+
+houses_df['Cluster'] = houses_df_final['cluster']
+print((houses_df[houses_df['Cluster']==0]).describe().transpose())
+print((houses_df[houses_df['Cluster']==1]).describe().transpose())
+print((houses_df[houses_df['Cluster']==2]).describe().transpose())
+
+houses_df.pop('Cluster')'''
+
 houses_copy = (houses_df.copy())
 y_reg = houses_df.pop('SalePrice')
 x_reg = houses_df
@@ -133,7 +187,7 @@ random.seed(5236)
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
 print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
 
-# use all GrLivArea and GarageArea as predictor
+# use all as predictor
 x= x_train_reg.values
 y= y_train_reg.values
 x_t = x_test_reg.values
@@ -148,29 +202,26 @@ print('All vars Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pre
 print("All vars R squared: %.2f"%r2_score(y_test_reg, y_pred))
 
 #print(x,type(x_reg))
+
+#Analisis VIF de todas
 vif = pd.DataFrame()
 vif["VIF"] = [variance_inflation_factor(houses_df.values, i)
                           for i in range(houses_df.shape[1])]
 vif["features"] = houses_df.columns
 print(vif.describe)
 
-corr =  houses_copy[['GrLivArea','GarageArea','SalePrice']].corr()
+#Mapa de correlacion
+corr =  houses_copy.corr()
 print('Pearson correlation coefficient matrix of each variables:\n', corr)
-
-mask = np.zeros_like(corr, dtype=np.bool)
-np.fill_diagonal(mask, val=True)
-
-fig, ax = plt.subplots(figsize=(6, 6))
-
-cmap = sns.diverging_palette(220, 10, as_cmap=True, sep=100)
-cmap.set_bad('grey')
-
-sns.heatmap(corr, mask=mask, cmap=cmap, vmin=-1, vmax=1, center=0, linewidths=.5)
-fig.suptitle('Pearson correlation coefficient matrix', fontsize=14)
-ax.tick_params(axis='both', which='major', labelsize=10)
+plt.figure(figsize=(16,10))
+#Realizando una mejor visualizacion de la matriz
+sns.heatmap(corr,annot=True,cmap='BrBG')
+plt.title('Matriz de correlaciones')
+plt.tight_layout()
 plt.show()
 
-fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
+#Mostrar todas las graficas de regresion
+'''fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
 
 e = None
 for i,_e in enumerate(x_train_reg.columns):
@@ -183,7 +234,7 @@ for i,_e in enumerate(x_train_reg.columns):
   y_pred = linear_model.predict(x_test_reg[e][:,np.newaxis])
   axes[i].plot(x_test_reg[e][:,np.newaxis], y_pred, color='k')
 
-plt.show()
+plt.show()'''
 
 # Volver a splittear, entrenar y predecir con las variables seleccionadas
 
@@ -219,6 +270,24 @@ print('Selected vars Coefficients: \n', linear_model.coef_)
 print('Selected vars Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
 print("Selected vars R squared: %.2f"%r2_score(y_test_reg, y_pred))
 
+#Analisis VIF de todas
+vif = pd.DataFrame()
+vif["VIF"] = [variance_inflation_factor(houses_df.values, i)
+                          for i in range(houses_df.shape[1])]
+vif["features"] = houses_df.columns
+print('VIF de variables seleccionadas \n',vif.describe)
+
+#Mapa de correlacion
+corr =  houses_copy[['GrLivArea','GarageArea','SalePrice']].corr()
+print('Pearson correlation coefficient matrix of each variables:\n', corr)
+
+plt.figure(figsize=(16,10))
+#Realizando una mejor visualizacion de la matriz
+sns.heatmap(corr,annot=True,cmap='BrBG')
+plt.title('Matriz de correlaciones')
+plt.tight_layout()
+plt.show()
+
 # Overfitting detect
 
 x_pred = linear_model.predict(x)
@@ -228,11 +297,12 @@ print('Train Mean squared error: %.2f' % mean_squared_error(y_train_reg, x_pred)
 print("Train R squared: %.2f"%r2_score(y_train_reg, x_pred))
 
 #RESIDUALES
+#Referencia: Informacion de clase
 
 residuales = y_t - y_pred
-len(residuales)
+print('Cantidad de residuales: ',len(residuales))
 
-plt.plot(x_t,residuales, 'o', color='darkblue')
+plt.plot(x_t,residuales, 'o', color='orange')
 plt.title("Gráfico de Residuales")
 plt.xlabel("Variable independiente")
 plt.ylabel("Residuales")
@@ -241,123 +311,28 @@ plt.show()
 sns.distplot(residuales);
 plt.title("Residuales")
 plt.show()
+
+data = residuales
+plt.hist(data,color='green')
+plt.title(f'Histograma')
+plt.xlabel(data)
+plt.ylabel('Cantidad')
+plt.show()
+qqplot(data , line='s')
+plt.title(f'QQplot para residuales')
+plt.show()
+
 plt.boxplot(residuales)
 plt.show()
 
 print('Normal Test ',normaltest(residuales))
 
 model = Ridge()
-visualizer = ResidualsPlot(model)
-visualizer.fit(x,y)
-visualizer.score(x_t,y_t)
-
+visualizer = ResidualsPlot(model).fit(x,y).score(x_t,y_t)
 plt.show()
 
-est = sm.OLS(y,x)
-est2 = est.fit()
-print(est2.summary())
-
-
-'''
-
-# 3d plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(x_t[:,0], x_t[:,1], y_t, c='r', marker='o')
-# graph a plane using prediction
-x_surf = np.linspace(x_t[:,0].min(), x_t[:,0].max(), 100)
-y_surf = np.linspace(x_t[:,1].min(), x_t[:,1].max(), 100)
-x_surf, y_surf = np.meshgrid(x_surf, y_surf)
-z_surf = linear_model.predict(np.c_[x_surf.ravel(), y_surf.ravel()]).reshape(x_surf.shape)
-ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.2, color='b')
-ax.set_xlabel('GrLivArea')
-ax.set_ylabel('Year Built')
-ax.set_zlabel('SalePrice')
-plt.show()
-
-#RESIDUALES
-
-residuales = y_t - y_pred
-len(residuales)
-
-
-
-plt.plot(x_t,residuales, 'o', color='darkblue')
-plt.title("Gráfico de Residuales")
-plt.xlabel("Variable independiente")
-plt.ylabel("Residuales")
-
-plt.show()
-sns.distplot(residuales);
-plt.title("Residuales")
-plt.show()
-plt.boxplot(residuales)
-plt.show()
-
-print('Normal Test ',normaltest(residuales))
-
-model = Ridge()
-visualizer = ResidualsPlot(model)
-visualizer.fit(x,y)
-visualizer.score(x_t,y_t)
-
-plt.show()
-
-est = sm.OLS(y,x)
-est2 = est.fit()
-print(est2.summary())'''
-
-
-
-
-
-
-
-
-
-'''# use OverallQual as predictor
-x= x_train_reg['OverallQual'].values.reshape(-1,1)
-y= y_train_reg.values.reshape(-1,1)
-x_t = x_test_reg['OverallQual'].values.reshape(-1,1)
-y_t = y_test_reg.values.reshape(-1,1)
-
-linear_model = LinearRegression()
-linear_model.fit(x, y)
-y_pred = linear_model.predict(x_t)
-
-print('OverallQual Coefficients: \n', linear_model.coef_)
-print('OverallQual Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('OverallQual R2 score: %.2f' % r2_score(y_test_reg, y_pred))'''
-
-
-'''# use OverallQual and GrLivArea as predictors
-x= x_train_reg[['OverallQual', 'GrLivArea']].values
-y= y_train_reg.values.reshape(-1,1)
-x_t = x_test_reg[['OverallQual', 'GrLivArea']].values
-y_t = y_test_reg.values.reshape(-1,1)
-
-linear_model = LinearRegression()
-linear_model.fit(x, y)
-y_pred = linear_model.predict(x_t)
-
-print('Multicolinealidad. Coefficients: \n', linear_model.coef_)
-print('Multicolinealidad. Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print('Multicolinealidad. R2 score: %.2f' % r2_score(y_test_reg, y_pred))
-
-# 3d plot
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(x_t[:,0], x_t[:,1], y_t, c='r', marker='o')
-# graph a plane using prediction
-x_surf = np.linspace(x_t[:,0].min(), x_t[:,0].max(), 100)
-y_surf = np.linspace(x_t[:,1].min(), x_t[:,1].max(), 100)
-x_surf, y_surf = np.meshgrid(x_surf, y_surf)
-z_surf = linear_model.predict(np.c_[x_surf.ravel(), y_surf.ravel()]).reshape(x_surf.shape)
-ax.plot_surface(x_surf, y_surf, z_surf, alpha=0.2, color='b')
-ax.set_xlabel('OverallQual')
-ax.set_ylabel('GrLivArea')
-ax.set_zlabel('SalePrice')
-plt.show()'''
+info_data = sm.OLS(y,x).fit()
+print(info_data.summary())
 
 # show predictions
 x_test_reg['SalePrice'] = y_pred
