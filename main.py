@@ -9,6 +9,7 @@
 
 from cgi import test
 from math import ceil
+import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,6 +32,7 @@ import random
 import graphviz
 import sklearn.mixture as mixture
 import scipy.cluster.hierarchy as sch
+from copy import copy
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 import matplotlib.cm as cm
 from sklearn.model_selection import train_test_split
@@ -125,24 +127,11 @@ print(y_reg.shape, x_reg.shape)
 
 x_reg.pop('MasVnrArea')
 x_reg.pop('GarageYrBlt')
-x_reg.pop('YearRemodAdd')
-x_reg.pop('YearBuilt')
-x_reg.pop('OverallQual')
-x_reg.pop('OverallCond')
-#x_reg.pop('GrLivArea')
-x_reg.pop('FullBath')
-x_reg.pop('TotalBsmtSF')
-x_reg.pop('1stFlrSF')
-x_reg.pop('GarageCars')
-#x_reg.pop('GarageArea')
-x_reg.pop('TotRmsAbvGrd')
-x_reg.pop('Fireplaces')
+
 random.seed(5236)
 
 x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
 print(x_train_reg.shape,x_test_reg.shape,y_train_reg.shape,y_test_reg.shape)
-
-
 
 # use all GrLivArea and GarageArea as predictor
 x= x_train_reg.values
@@ -153,6 +142,10 @@ y_t = y_test_reg.values
 linear_model = LinearRegression()
 linear_model.fit(x, y)
 y_pred = linear_model.predict(x_t)
+
+print('All vars Coefficients: \n', linear_model.coef_)
+print('All vars Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print("All vars R squared: %.2f"%r2_score(y_test_reg, y_pred))
 
 #print(x,type(x_reg))
 vif = pd.DataFrame()
@@ -179,27 +172,65 @@ plt.show()
 
 fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
 
-for i,e in enumerate(x_train_reg.columns):
+e = None
+for i,_e in enumerate(x_train_reg.columns):
+  e = _e
   linear_model.fit(x_train_reg[e][:,np.newaxis], y_train_reg)
   axes[i].set_title("Best fit line")
   axes[i].set_xlabel(str(e))
   axes[i].set_ylabel('SalePrice')
   axes[i].scatter(x_train_reg[e][:,np.newaxis], y_train_reg,color='g')
-  axes[i].plot(x_test_reg[e][:,np.newaxis],
-  linear_model.predict(x_test_reg[e][:,np.newaxis]),color='k')
+  y_pred = linear_model.predict(x_test_reg[e][:,np.newaxis])
+  axes[i].plot(x_test_reg[e][:,np.newaxis], y_pred, color='k')
 
 plt.show()
 
-print('Coefficients: \n', linear_model.coef_)
-print('Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
-print("R squared: %.2f"%r2_score(y_test_reg, y_pred))
+# Volver a splittear, entrenar y predecir con las variables seleccionadas
+
+x_reg.pop('YearRemodAdd')
+x_reg.pop('YearBuilt')
+x_reg.pop('OverallQual')
+x_reg.pop('OverallCond')
+#x_reg.pop('GrLivArea')
+x_reg.pop('FullBath')
+x_reg.pop('TotalBsmtSF')
+x_reg.pop('1stFlrSF')
+x_reg.pop('GarageCars')
+#x_reg.pop('GarageArea')
+x_reg.pop('TotRmsAbvGrd')
+x_reg.pop('Fireplaces')
+
+tic = time.time()
+x_train_reg, x_test_reg, y_train_reg, y_test_reg = train_test_split(x_reg, y_reg, test_size=0.3, train_size=0.7, random_state=0)
+
+# use all GrLivArea and GarageArea as predictor
+x= x_train_reg.values
+y= y_train_reg.values
+x_t = x_test_reg.values
+y_t = y_test_reg.values
+
+linear_model = LinearRegression()
+linear_model.fit(x, y)
+y_pred = linear_model.predict(x_t)
+tactic = time.time()
+print('Linear Regression time: \n', linear_model.coef_)
+
+print('Selected vars Coefficients: \n', linear_model.coef_)
+print('Selected vars Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print("Selected vars R squared: %.2f"%r2_score(y_test_reg, y_pred))
+
+# Overfitting detect
+
+x_pred = linear_model.predict(x)
+
+print('Train Coefficients: \n', linear_model.coef_)
+print('Train Mean squared error: %.2f' % mean_squared_error(y_train_reg, x_pred))
+print("Train R squared: %.2f"%r2_score(y_train_reg, x_pred))
 
 #RESIDUALES
 
 residuales = y_t - y_pred
 len(residuales)
-
-
 
 plt.plot(x_t,residuales, 'o', color='darkblue')
 plt.title("Gráfico de Residuales")
@@ -328,3 +359,14 @@ ax.set_ylabel('GrLivArea')
 ax.set_zlabel('SalePrice')
 plt.show()'''
 
+# show predictions
+x_test_reg['SalePrice'] = y_pred
+print(x_test_reg.head())
+
+# graph y_pred and y_test
+plt.scatter(x_test_reg.SalePrice, y_test_reg, color='darkblue')
+plt.plot(x_test_reg.SalePrice, y_pred, color='red', linewidth=2)
+plt.title('Predicciones')
+plt.xlabel('SalePrice')
+plt.ylabel('SalePrice')
+plt.show()
