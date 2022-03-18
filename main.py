@@ -28,6 +28,7 @@ import pyclustertend
 import random
 import graphviz
 import sklearn.mixture as mixture
+from sklearn import preprocessing, tree
 import scipy.cluster.hierarchy as sch
 from copy import copy
 import matplotlib.cm as cm
@@ -219,6 +220,22 @@ sns.heatmap(corr,annot=True,cmap='BrBG')
 plt.title('Matriz de correlaciones')
 plt.tight_layout()
 plt.show()
+
+# Regression values
+x= x_train_reg['OverallQual'].values.reshape(-1,1)
+y= y_train_reg.values.reshape(-1,1)
+x_t = x_test_reg['OverallQual'].values.reshape(-1,1)
+y_t = y_test_reg.values.reshape(-1,1)
+
+Dt_model_reg = tree.DecisionTreeRegressor(random_state=0, max_leaf_nodes=20)
+
+Dt_model_reg.fit(x, y)
+
+y_pred = Dt_model_reg.predict(X = x_t)
+
+print('OverallQual Regression Tree Coefficients: \n', linear_model.coef_)
+print('OverallQual Regression Tree Mean squared error: %.2f' % mean_squared_error(y_test_reg, y_pred))
+print('OverallQual Regression Tree R2 score: %.2f' % r2_score(y_test_reg, y_pred))
 
 #Mostrar todas las graficas de regresion
 '''fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
