@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.cluster import KMeans
 from sklearn.metrics import classification_report, mean_squared_error, r2_score, silhouette_score
 from sklearn.linear_model import LinearRegression
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -44,8 +45,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 houses = pd.read_csv('train.csv', encoding='latin1', engine='python')
 
-'''
-
 #Conocimiento de datos
 print(houses.head())
 
@@ -55,10 +54,9 @@ print(houses.shape)
 #Medidas estadisticas.
 print(houses.describe().transpose())
 
-print(houses.select_dtypes(exclude=['object']).info())'''
+print(houses.select_dtypes(exclude=['object']).info())
 
-
-'''#Casas que ofrecen todas las utilidades
+#Casas que ofrecen todas las utilidades
 print(houses['Utilities'].value_counts())
 
 plt.bar(houses['Utilities'].value_counts().sort_index().dropna().index, houses['Utilities'].value_counts().sort_index().values, color='red')
@@ -88,11 +86,11 @@ print(houses.sort_values(by='SalePrice', ascending=False)[['GarageCars','SalePri
 print(houses.sort_values(by='SalePrice', ascending=True)[['GarageCars','SalePrice']].head(5))
 
 #Condicion de garage y calidad de la cocina de las 5 casas mas caras
-print(houses.sort_values(by='SalePrice', ascending=False)[['GarageCond','KitchenQual','SalePrice']].head(5))'''
+print(houses.sort_values(by='SalePrice', ascending=False)[['GarageCond','KitchenQual','SalePrice']].head(5))
 
 houses_clean = houses.select_dtypes(exclude='object').drop('Id', axis=1)
 
-'''#preprocesamiento
+#preprocesamiento
 corr_data = houses_clean.iloc[:,:]
 mat_correlation=corr_data.corr() # se calcula la matriz , usando el coeficiente de correlacion de Pearson
 plt.figure(figsize=(16,10))
@@ -101,23 +99,23 @@ plt.figure(figsize=(16,10))
 sns.heatmap(mat_correlation,annot=True,cmap='BrBG')
 plt.title('Matriz de correlaciones  para la base Houses')
 plt.tight_layout()
-plt.show()'''
+plt.show()
 
 # Seleccion de variables
 houses_df = houses_clean[['OverallQual', 'OverallCond', 'GrLivArea', 'YearBuilt', 'YearRemodAdd', 'MasVnrArea', 'TotalBsmtSF', '1stFlrSF', 'FullBath', 'Fireplaces',
 'GarageCars', 'GarageArea', 'GarageYrBlt','TotRmsAbvGrd','SalePrice']]
-'''
+
 print(houses_df.head().dropna())
 print(houses_df.info())
 print(houses_df.describe().transpose())
-'''
+
 houses_df.fillna(0)
 
 #normalizar
 df_norm  = (houses_df-houses_df.min())/(houses_df.max()-houses_df.min())
 #print(movies_clean_norm.fillna(0))
 houses_df_final = df_norm.fillna(0)
-'''#Analisis de tendencia a agrupamiento
+#Analisis de tendencia a agrupamiento
 
 #Metodo Hopkings
 
@@ -172,7 +170,7 @@ print((houses_df[houses_df['Cluster']==0]).describe().transpose())
 print((houses_df[houses_df['Cluster']==1]).describe().transpose())
 print((houses_df[houses_df['Cluster']==2]).describe().transpose())
 
-houses_df.pop('Cluster')'''
+houses_df.pop('Cluster')
 
 houses_copy = (houses_df.copy())
 y_reg = houses_df.pop('SalePrice')
@@ -238,7 +236,7 @@ print('OverallQual Regression Tree Mean squared error: %.2f' % mean_squared_erro
 print('OverallQual Regression Tree R2 score: %.2f' % r2_score(y_test_reg, y_pred))
 
 #Mostrar todas las graficas de regresion
-'''fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
+fig, axes = plt.subplots(1,len(x_train_reg.columns.values),sharey=True,constrained_layout=True,figsize=(30,15))
 
 e = None
 for i,_e in enumerate(x_train_reg.columns):
@@ -251,7 +249,7 @@ for i,_e in enumerate(x_train_reg.columns):
   y_pred = linear_model.predict(x_test_reg[e][:,np.newaxis])
   axes[i].plot(x_test_reg[e][:,np.newaxis], y_pred, color='k')
 
-plt.show()'''
+plt.show()
 
 # Volver a splittear, entrenar y predecir con las variables seleccionadas
 
